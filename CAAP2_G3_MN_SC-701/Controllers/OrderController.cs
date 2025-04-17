@@ -18,21 +18,19 @@ namespace CAAP2_G3_MN_SC_701.Controllers
         private readonly IOrderService _orderService;
         private readonly OrdersDbContext _context;
         private readonly OrderFactory _orderFactory;
-        private readonly IExchangeRateService _exchangeRateService;
 
-        public OrderController(IOrderService orderService, OrdersDbContext context, IExchangeRateService exchangeRateService)
+        public OrderController(IOrderService orderService, OrdersDbContext context)
         {
             _orderService = orderService;
             _context = context;
             _orderFactory = new OrderFactory();
-            _exchangeRateService = exchangeRateService;
         }
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
             var orders = await _orderService.GetAllOrdersAsync();
-            var exchange = await _exchangeRateService.GetExchangeRateAsync();
+            var exchange = await ExchangeRateService.Instance.GetExchangeRateAsync();
             ViewBag.ExchangeRate = exchange;
             return View(orders);
         }

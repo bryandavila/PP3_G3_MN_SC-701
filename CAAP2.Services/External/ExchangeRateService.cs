@@ -1,37 +1,38 @@
-﻿using System.Net.Http;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Net.Http.Json;
 using CAAP2.Models.External;
+using System;
 
 namespace CAAP2.Services.External
 {
-    public class ExchangeRateService : IExchangeRateService
+    public sealed class ExchangeRateService : IExchangeRateService
     {
+        //Instancia estática única (Lazy garantiza inicialización perezosa y seguridad en hilos múltiples)
+        private static readonly Lazy<ExchangeRateService> _instance = new(() => new ExchangeRateService());
+
+        //Cliente HTTP que será reutilizado
         private readonly HttpClient _httpClient;
 
-        public ExchangeRateService(HttpClient httpClient)
+        //Propiedad pública para acceder a la instancia Singleton
+        public static ExchangeRateService Instance => _instance.Value;
+
+        //Constructor privado impide la creación desde fuera
+        private ExchangeRateService()
         {
-            _httpClient = httpClient;
+            _httpClient = new HttpClient();
         }
 
+        //Método que consulta el tipo de cambio desde una API externa
         public async Task<ExchangeRateResponse?> GetExchangeRateAsync()
         {
-            var url = "https://tipodecambio.paginasweb.cr/api/";
-
-            var response = await _httpClient.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-                return null;
-
-            var json = await response.Content.ReadAsStringAsync();
-
-            var result = JsonSerializer.Deserialize<ExchangeRateResponse>(json, new JsonSerializerOptions
+            try
             {
-                PropertyNameCaseInsensitive = true
-            });
-
-            return result;
+                var response = await _httpClient.GetFromJsonAsync<ExchangeRateResponse>("https://tipodecambio.paginasweb.cr/api");
+                return response;
+            }
+            catch
+            {
+                return null;
+            }
         }
-
     }
 }
-
